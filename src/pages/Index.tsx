@@ -6,10 +6,24 @@ import useMainStore from '@/stores/main'
 import { cn } from '@/lib/utils'
 
 export default function Index() {
-  const { tasks, currentUser, activities, users } = useMainStore()
+  const { tasks, currentUser, activities, users, macroAreas } = useMainStore()
 
-  const activeTasks = tasks.filter((t) => t.status !== 'done').length
-  const pendingCredits = tasks
+  if (!currentUser) return null
+
+  const isLeader =
+    currentUser.role === 'Area Leader' &&
+    currentUser.assignedAreas &&
+    currentUser.assignedAreas.length > 0
+  const leaderAreas = isLeader
+    ? macroAreas.filter((a) => currentUser.assignedAreas?.includes(a.id))
+    : []
+
+  const relevantTasks = isLeader
+    ? tasks.filter((t) => t.macroAreaId && currentUser.assignedAreas?.includes(t.macroAreaId))
+    : tasks
+
+  const activeTasks = relevantTasks.filter((t) => t.status !== 'done').length
+  const pendingCredits = relevantTasks
     .filter((t) => t.status === 'review' && t.assignees.some((a) => a.id === currentUser.id))
     .reduce((acc, t) => acc + t.credits, 0)
 
@@ -21,11 +35,20 @@ export default function Index() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Visão Geral</h1>
-        <p className="text-muted-foreground">
-          Acompanhe suas tarefas e contribuições nos seus espaços.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Visão Geral</h1>
+          <p className="text-muted-foreground">
+            {isLeader
+              ? `Painel de Líder focado em: ${leaderAreas.map((a) => a.name).join(', ')}`
+              : 'Acompanhe suas tarefas e contribuições nos seus espaços.'}
+          </p>
+        </div>
+        {isLeader && (
+          <Badge variant="outline" className="text-accent border-accent px-3 py-1">
+            Modo Líder de Área
+          </Badge>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -36,7 +59,9 @@ export default function Index() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{activeTasks}</div>
-            <p className="text-xs text-muted-foreground">Em todos os espaços</p>
+            <p className="text-xs text-muted-foreground">
+              {isLeader ? 'Nas suas áreas' : 'Em todos os espaços'}
+            </p>
           </CardContent>
         </Card>
         <Card className="animate-fade-in-up" style={{ animationDelay: '100ms' }}>

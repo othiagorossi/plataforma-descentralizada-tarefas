@@ -12,8 +12,10 @@ import useMainStore from '@/stores/main'
 import { Badge } from '@/components/ui/badge'
 
 export function AppHeader() {
-  const { activities } = useMainStore()
+  const { activities, currentUser } = useMainStore()
   const recentActivities = activities.slice(0, 3)
+
+  if (!currentUser) return null
 
   return (
     <header className="h-16 border-b bg-background flex items-center justify-between px-4 lg:px-6 sticky top-0 z-10">

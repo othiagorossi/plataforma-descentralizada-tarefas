@@ -16,15 +16,19 @@ import useMainStore from '@/stores/main'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 export function AppSidebar() {
-  const { currentUser, spaces } = useMainStore()
+  const { currentUser, spaces, logout } = useMainStore()
   const location = useLocation()
 
   const navItems = [
     { title: 'Início', url: '/', icon: LayoutDashboard },
     { title: 'Minhas Tarefas', url: '/tarefas', icon: CheckSquare },
     { title: 'Explorar Pessoas', url: '/pessoas', icon: Users },
-    { title: 'Gerenciar Espaços', url: '/espacos', icon: Settings },
+    { title: 'Gerenciar Espaços', url: '/espacos', icon: Hexagon },
   ]
+
+  if (currentUser?.role === 'Project Manager' || currentUser?.role === 'Admin') {
+    navItems.push({ title: 'Gestão de Áreas', url: '/gestao', icon: Settings })
+  }
 
   return (
     <Sidebar>
@@ -76,21 +80,30 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t p-4">
-        <div className="flex items-center gap-3">
-          <Avatar>
-            <AvatarImage src={currentUser.avatar} />
-            <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col overflow-hidden">
-            <span className="text-sm font-medium truncate">{currentUser.name}</span>
-            <div className="flex items-center text-xs text-accent font-semibold mt-0.5">
-              <Coins className="w-3 h-3 mr-1" />
-              {currentUser.credits} Créditos
+      {currentUser && (
+        <SidebarFooter className="border-t p-4 flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <Avatar>
+              <AvatarImage src={currentUser.avatar} />
+              <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col overflow-hidden flex-1">
+              <span className="text-sm font-medium truncate">{currentUser.name}</span>
+              <span className="text-xs text-muted-foreground truncate">{currentUser.role}</span>
+              <div className="flex items-center text-xs text-accent font-semibold mt-0.5">
+                <Coins className="w-3 h-3 mr-1" />
+                {currentUser.credits} Créditos
+              </div>
             </div>
           </div>
-        </div>
-      </SidebarFooter>
+          <button
+            onClick={logout}
+            className="text-xs text-muted-foreground hover:text-foreground text-left w-full py-1 font-medium transition-colors"
+          >
+            Sair da conta
+          </button>
+        </SidebarFooter>
+      )}
     </Sidebar>
   )
 }

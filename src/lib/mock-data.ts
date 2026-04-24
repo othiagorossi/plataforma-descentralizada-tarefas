@@ -1,13 +1,22 @@
-import { Task, User, Activity, Space } from '@/types'
+import { Task, User, Activity, Space, MacroArea } from '@/types'
+
+export const mockMacroAreas: MacroArea[] = [
+  { id: 'area1', name: 'Área 1', costCenter: 'CC-1001' },
+  { id: 'area2', name: 'Área 2', costCenter: 'CC-1002' },
+  { id: 'area3', name: 'Área 3', costCenter: 'CC-1003' },
+  { id: 'area4', name: 'Área 4', costCenter: 'CC-1004' },
+  { id: 'area5', name: 'Área 5', costCenter: 'CC-1005' },
+  { id: 'area6', name: 'Área 6', costCenter: 'CC-1006' },
+]
 
 export const mockUsers: User[] = [
   {
     id: 'u1',
     name: 'Ana Silva',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=1',
-    role: 'Admin',
+    role: 'Project Manager',
     credits: 1250,
-    skills: ['Design', 'UX'],
+    skills: ['Design', 'UX', 'Management'],
   },
   {
     id: 'u2',
@@ -21,9 +30,10 @@ export const mockUsers: User[] = [
     id: 'u3',
     name: 'Beatriz Costa',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=3',
-    role: 'Revisora',
+    role: 'Area Leader',
     credits: 2100,
     skills: ['Copywriting', 'Marketing'],
+    assignedAreas: ['area1', 'area3'],
   },
   {
     id: 'u4',
@@ -35,7 +45,7 @@ export const mockUsers: User[] = [
   },
 ]
 
-export const currentUser = mockUsers[0]
+export const currentUser = null
 
 export const mockSpaces: Space[] = [
   {
@@ -69,6 +79,7 @@ export const mockTasks: Task[] = [
     assignees: [mockUsers[0], mockUsers[1]],
     tags: ['Design', 'Urgente'],
     dueDate: '2026-05-01',
+    macroAreaId: 'area1',
   },
   {
     id: 't2',
@@ -79,6 +90,7 @@ export const mockTasks: Task[] = [
     assignees: [mockUsers[3]],
     tags: ['Dev', 'Backend'],
     dueDate: '2026-04-28',
+    macroAreaId: 'area2',
   },
   {
     id: 't3',
@@ -89,6 +101,7 @@ export const mockTasks: Task[] = [
     assignees: [mockUsers[2]],
     tags: ['Marketing'],
     dueDate: '2026-04-20',
+    macroAreaId: 'area3',
   },
   {
     id: 't4',
@@ -107,6 +120,7 @@ export const mockTasks: Task[] = [
     credits: 80,
     assignees: [mockUsers[2]],
     tags: ['Comunidade'],
+    macroAreaId: 'area1',
   },
 ]
 

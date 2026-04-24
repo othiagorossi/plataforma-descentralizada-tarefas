@@ -7,6 +7,14 @@ export interface User {
   role: string
   credits: number
   skills: string[]
+  assignedAreas?: string[]
+}
+
+export interface MacroArea {
+  id: string
+  name: string
+  costCenter: string
+  leaderId?: string
 }
 
 export interface Task {
@@ -18,6 +26,7 @@ export interface Task {
   assignees: User[]
   tags: string[]
   dueDate?: string
+  macroAreaId?: string
 }
 
 export interface Activity {

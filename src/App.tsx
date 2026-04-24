@@ -8,6 +8,9 @@ import Layout from './components/Layout'
 import TasksPage from './pages/tasks/TasksPage'
 import PeoplePage from './pages/people/PeoplePage'
 import SpacesPage from './pages/spaces/SpacesPage'
+import LoginPage from './pages/auth/LoginPage'
+import ManagementPage from './pages/admin/ManagementPage'
+import ProtectedRoute from './components/auth/ProtectedRoute'
 import { MainStoreProvider } from './stores/main'
 
 const App = () => (
@@ -17,11 +20,19 @@ const App = () => (
         <Toaster />
         <Sonner />
         <Routes>
-          <Route element={<Layout />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
             <Route path="/" element={<Index />} />
             <Route path="/tarefas" element={<TasksPage />} />
             <Route path="/pessoas" element={<PeoplePage />} />
             <Route path="/espacos" element={<SpacesPage />} />
+            <Route path="/gestao" element={<ManagementPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
