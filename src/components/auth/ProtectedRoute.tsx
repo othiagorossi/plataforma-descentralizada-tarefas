@@ -1,11 +1,20 @@
 import { Navigate, useLocation } from 'react-router-dom'
-import useMainStore from '@/stores/main'
+import { useAuth } from '@/hooks/use-auth'
+import { Loader2 } from 'lucide-react'
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { currentUser } = useMainStore()
+  const { user, loading } = useAuth()
   const location = useLocation()
 
-  if (!currentUser) {
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 

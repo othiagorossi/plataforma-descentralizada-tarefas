@@ -12,33 +12,36 @@ import LoginPage from './pages/auth/LoginPage'
 import ManagementPage from './pages/admin/ManagementPage'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import { MainStoreProvider } from './stores/main'
+import { AuthProvider } from './hooks/use-auth'
 
 const App = () => (
-  <MainStoreProvider>
-    <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/" element={<Index />} />
-            <Route path="/tarefas" element={<TasksPage />} />
-            <Route path="/pessoas" element={<PeoplePage />} />
-            <Route path="/espacos" element={<SpacesPage />} />
-            <Route path="/gestao" element={<ManagementPage />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </TooltipProvider>
-    </BrowserRouter>
-  </MainStoreProvider>
+  <AuthProvider>
+    <MainStoreProvider>
+      <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/" element={<Index />} />
+              <Route path="/tarefas" element={<TasksPage />} />
+              <Route path="/pessoas" element={<PeoplePage />} />
+              <Route path="/espacos" element={<SpacesPage />} />
+              <Route path="/gestao" element={<ManagementPage />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
+      </BrowserRouter>
+    </MainStoreProvider>
+  </AuthProvider>
 )
 
 export default App

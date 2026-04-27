@@ -1,7 +1,16 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useCallback,
+  useEffect,
+} from 'react'
 import { Task, User, Activity, Space, TaskStatus, MacroArea } from '@/types'
 import { mockTasks, mockUsers, mockActivities, mockSpaces, mockMacroAreas } from '@/lib/mock-data'
 import { toast } from 'sonner'
+import { useAuth } from '@/hooks/use-auth'
+import { supabase } from '@/lib/supabase/client'
 
 interface MainStoreState {
   currentUser: User | null
@@ -21,14 +30,55 @@ interface MainStoreState {
 const MainStoreContext = createContext<MainStoreState | undefined>(undefined)
 
 export const MainStoreProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth()
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [tasks, setTasks] = useState<Task[]>(mockTasks)
   const [users, setUsers] = useState<User[]>(mockUsers)
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const { data } = await supabase.from('profiles').select('*')
+      if (data && data.length > 0) {
+        const dbUsers = data.map((d: any) => ({
+          id: d.id,
+          email: d.email,
+          name: d.name,
+          avatar: d.avatar || `https://img.usecurling.com/ppl/thumbnail?seed=${d.id}`,
+          role: d.role,
+          credits: d.credits,
+          skills: d.skills || [],
+          assignedAreas: d.assigned_areas || [],
+        }))
+        setUsers(dbUsers)
+
+        if (user) {
+          const current = dbUsers.find((u: User) => u.id === user.id)
+          if (current) setCurrentUser(current)
+        } else {
+          setCurrentUser(null)
+        }
+      } else if (user) {
+        // Fallback if db is empty but user is logged in
+        setCurrentUser({
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata?.name || 'User',
+          avatar: `https://img.usecurling.com/ppl/thumbnail?seed=${user.id}`,
+          role: 'Member',
+          credits: 0,
+          skills: [],
+        })
+      } else {
+        setCurrentUser(null)
+      }
+    }
+    fetchUsers()
+  }, [user])
   const [activities, setActivities] = useState<Activity[]>(mockActivities)
   const [spaces, setSpaces] = useState<Space[]>(mockSpaces)
   const [macroAreas, setMacroAreas] = useState<MacroArea[]>(mockMacroAreas)
 
-  const login = useCallback((user: User) => setCurrentUser(user), [])
+  const login = useCallback((u: User) => setCurrentUser(u), [])
   const logout = useCallback(() => setCurrentUser(null), [])
 
   const updateMacroArea = useCallback((areaId: string, data: Partial<MacroArea>) => {

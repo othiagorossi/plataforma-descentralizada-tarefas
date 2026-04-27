@@ -2,6 +2,7 @@ export type TaskStatus = 'todo' | 'in-progress' | 'review' | 'done'
 
 export interface User {
   id: string
+  email?: string
   name: string
   avatar: string
   role: string
@@ -27,6 +28,7 @@ export interface Task {
   tags: string[]
   dueDate?: string
   macroAreaId?: string
+  googleEventId?: string
 }
 
 export interface Activity {

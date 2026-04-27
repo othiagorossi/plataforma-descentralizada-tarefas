@@ -1,4 +1,4 @@
-import { Bell, Plus, Search } from 'lucide-react'
+import { Bell, Plus, Search, LogOut, Settings, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -9,11 +9,20 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import useMainStore from '@/stores/main'
-import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useAuth } from '@/hooks/use-auth'
+import { useNavigate } from 'react-router-dom'
 
 export function AppHeader() {
   const { activities, currentUser } = useMainStore()
+  const { signOut } = useAuth()
+  const navigate = useNavigate()
   const recentActivities = activities.slice(0, 3)
+
+  const handleLogout = async () => {
+    await signOut()
+    navigate('/login')
+  }
 
   if (!currentUser) return null
 
@@ -67,6 +76,38 @@ export function AppHeader() {
             <DropdownMenuItem>Nova Tarefa</DropdownMenuItem>
             <DropdownMenuItem>Convidar Membro</DropdownMenuItem>
             <DropdownMenuItem>Novo Espaço</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-9 w-9 rounded-full ml-2">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
+                <AvatarFallback>{currentUser?.name?.charAt(0)}</AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end" forceMount>
+            <div className="p-2 border-b mb-2 flex flex-col space-y-1">
+              <p className="text-sm font-medium leading-none">{currentUser?.name}</p>
+              <p className="text-xs leading-none text-muted-foreground">{currentUser?.email}</p>
+            </div>
+            <DropdownMenuItem>
+              <User className="mr-2 h-4 w-4" />
+              <span>Perfil</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Configurações</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-destructive focus:bg-destructive/10 cursor-pointer"
+              onClick={handleLogout}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Sair</span>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
