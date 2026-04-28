@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,11 +13,17 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
-  const { signIn, signUp, signInWithGoogle } = useAuth()
+  const { user, loading: isAuthLoading, signIn, signUp, signInWithGoogle } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
   const from = location.state?.from?.pathname || '/'
+
+  useEffect(() => {
+    if (user && !isAuthLoading) {
+      navigate(from, { replace: true })
+    }
+  }, [user, isAuthLoading, navigate, from])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()

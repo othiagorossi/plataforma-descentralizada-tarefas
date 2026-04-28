@@ -1,162 +1,120 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { CheckCircle2, Clock, Coins, Layers } from 'lucide-react'
-import useMainStore from '@/stores/main'
-import { cn } from '@/lib/utils'
+import { useEffect, useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { supabase } from '@/lib/supabase/client'
+import { Loader2, LayoutDashboard, CheckCircle, Users, Activity } from 'lucide-react'
+import { useAuth } from '@/hooks/use-auth'
 
 export default function Index() {
-  const { tasks, currentUser, activities, users, macroAreas } = useMainStore()
+  const { user } = useAuth()
+  const [stats, setStats] = useState({ tasks: 0, completedTasks: 0, members: 0, macroAreas: 0 })
+  const [loading, setLoading] = useState(true)
 
-  if (!currentUser) return null
+  useEffect(() => {
+    async function fetchStats() {
+      if (!user) return
 
-  const isLeader =
-    currentUser.role === 'Area Leader' &&
-    currentUser.assignedAreas &&
-    currentUser.assignedAreas.length > 0
-  const leaderAreas = isLeader
-    ? macroAreas.filter((a) => currentUser.assignedAreas?.includes(a.id))
-    : []
+      try {
+        const [tasksRes, completedRes, membersRes, areasRes] = await Promise.all([
+          supabase.from('tasks').select('id', { count: 'exact', head: true }),
+          supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('status', 'done'),
+          supabase.from('profiles').select('id', { count: 'exact', head: true }),
+          supabase.from('macro_areas').select('id', { count: 'exact', head: true }),
+        ])
 
-  const relevantTasks = isLeader
-    ? tasks.filter((t) => t.macroAreaId && currentUser.assignedAreas?.includes(t.macroAreaId))
-    : tasks
+        setStats({
+          tasks: tasksRes.count || 0,
+          completedTasks: completedRes.count || 0,
+          members: membersRes.count || 0,
+          macroAreas: areasRes.count || 0,
+        })
+      } catch (error) {
+        console.error('Error fetching stats', error)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  const activeTasks = relevantTasks.filter((t) => t.status !== 'done').length
-  const pendingCredits = relevantTasks
-    .filter((t) => t.status === 'review' && t.assignees.some((a) => a.id === currentUser.id))
-    .reduce((acc, t) => acc + t.credits, 0)
+    fetchStats()
+  }, [user])
 
-  const myAssignedTasks = tasks.filter(
-    (t) => t.status !== 'done' && t.assignees.some((a) => a.id === currentUser.id),
-  )
-
-  const topUsers = [...users].sort((a, b) => b.credits - a.credits).slice(0, 5)
+  if (loading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">Visão Geral</h1>
-          <p className="text-muted-foreground">
-            {isLeader
-              ? `Painel de Líder focado em: ${leaderAreas.map((a) => a.name).join(', ')}`
-              : 'Acompanhe suas tarefas e contribuições nos seus espaços.'}
-          </p>
-        </div>
-        {isLeader && (
-          <Badge variant="outline" className="text-accent border-accent px-3 py-1">
-            Modo Líder de Área
-          </Badge>
-        )}
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">Bem-vindo ao seu painel de controle.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="animate-fade-in-up" style={{ animationDelay: '0ms' }}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tarefas Ativas</CardTitle>
-            <Layers className="h-4 w-4 text-muted-foreground" />
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total de Tarefas</CardTitle>
+            <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeTasks}</div>
-            <p className="text-xs text-muted-foreground">
-              {isLeader ? 'Nas suas áreas' : 'Em todos os espaços'}
-            </p>
+            <div className="text-2xl font-bold">{stats.tasks}</div>
+            <p className="text-xs text-muted-foreground">Tarefas cadastradas</p>
           </CardContent>
         </Card>
-        <Card className="animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Créditos Pendentes</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-accent">{pendingCredits}</div>
-            <p className="text-xs text-muted-foreground">Aguardando aprovação</p>
-          </CardContent>
-        </Card>
-        <Card className="animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Créditos</CardTitle>
-            <Coins className="h-4 w-4 text-accent" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-accent">{currentUser.credits}</div>
-            <p className="text-xs text-muted-foreground">Acumulados este mês</p>
-          </CardContent>
-        </Card>
-        <Card className="animate-fade-in-up" style={{ animationDelay: '300ms' }}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Tarefas Concluídas</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {tasks.filter((t) => t.status === 'done').length}
-            </div>
-            <p className="text-xs text-muted-foreground">No histórico global</p>
+            <div className="text-2xl font-bold">{stats.completedTasks}</div>
+            <p className="text-xs text-muted-foreground">Tarefas finalizadas</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Membros</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.members}</div>
+            <p className="text-xs text-muted-foreground">Pessoas na plataforma</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Áreas Macro</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.macroAreas}</div>
+            <p className="text-xs text-muted-foreground">Centros de custo ativos</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
+        <Card className="col-span-4">
           <CardHeader>
-            <CardTitle>Minhas Tarefas Atuais</CardTitle>
+            <CardTitle>Visão Geral</CardTitle>
+            <CardDescription>Resumo de atividades recentes.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {myAssignedTasks.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Nenhuma tarefa atribuída no momento.
-                </p>
-              ) : (
-                myAssignedTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium leading-none">{task.title}</p>
-                      <p className="text-xs text-muted-foreground">{task.tags.join(' • ')}</p>
-                    </div>
-                    <Badge
-                      variant="secondary"
-                      className="font-semibold text-accent border-accent/20 bg-accent/10"
-                    >
-                      {task.credits} C
-                    </Badge>
-                  </div>
-                ))
-              )}
+          <CardContent className="pl-2">
+            <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground border-2 border-dashed rounded-lg m-4">
+              Os gráficos de produtividade serão habilitados em breve.
             </div>
           </CardContent>
         </Card>
-
-        <Card
-          className="col-span-full lg:col-span-3 animate-fade-in-up"
-          style={{ animationDelay: '500ms' }}
-        >
+        <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>Top Contribuidores</CardTitle>
+            <CardTitle>Avisos</CardTitle>
+            <CardDescription>Notificações importantes da plataforma.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              {topUsers.map((user, i) => (
-                <div key={user.id} className="flex items-center">
-                  <div className="flex items-center justify-center w-6 text-sm font-bold text-muted-foreground mr-2">
-                    {i + 1}
-                  </div>
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div className="ml-4 space-y-1 flex-1">
-                    <p className="text-sm font-medium leading-none">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">{user.role}</p>
-                  </div>
-                  <div className="font-medium text-sm text-accent">{user.credits} C</div>
-                </div>
-              ))}
+            <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground border-2 border-dashed rounded-lg m-4">
+              Nenhuma notificação no momento.
             </div>
           </CardContent>
         </Card>

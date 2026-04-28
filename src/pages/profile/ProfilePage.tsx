@@ -1,67 +1,94 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import useMainStore from '@/stores/main'
-import { Coins, Mail, User, Shield } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useAuth } from '@/hooks/use-auth'
+import { supabase } from '@/lib/supabase/client'
+import { Loader2, User } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function ProfilePage() {
-  const { currentUser } = useMainStore()
+  const { user } = useAuth()
+  const [profile, setProfile] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [name, setName] = useState('')
 
-  if (!currentUser) return null
+  useEffect(() => {
+    async function loadProfile() {
+      if (!user) return
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      if (data) {
+        setProfile(data)
+        setName(data.name || '')
+      }
+      setLoading(false)
+    }
+    loadProfile()
+  }, [user])
+
+  const handleSave = async () => {
+    if (!user) return
+    setSaving(true)
+    const { error } = await supabase.from('profiles').update({ name }).eq('id', user.id)
+    if (error) {
+      toast.error('Erro ao atualizar perfil')
+    } else {
+      toast.success('Perfil atualizado com sucesso')
+    }
+    setSaving(false)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Meu Perfil</h1>
-        <p className="text-muted-foreground">
-          Visualize suas informações e estatísticas na plataforma.
-        </p>
+        <p className="text-muted-foreground">Gerencie suas informações pessoais e credenciais.</p>
       </div>
 
       <Card>
-        <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-            <Avatar className="h-24 w-24 border-4 border-background shadow-md">
-              <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
-              <AvatarFallback className="text-2xl">{currentUser.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="text-center sm:text-left space-y-1">
-              <CardTitle className="text-2xl">{currentUser.name}</CardTitle>
-              <div className="flex items-center justify-center sm:justify-start text-muted-foreground gap-2">
-                <Mail className="w-4 h-4" />
-                <span>{currentUser.email}</span>
-              </div>
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
-                <Badge variant="secondary" className="gap-1">
-                  <Shield className="w-3 h-3" /> {currentUser.role}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="gap-1 bg-accent/10 text-accent border-accent/20"
-                >
-                  <Coins className="w-3 h-3" /> {currentUser.credits} Créditos
-                </Badge>
+        <CardHeader>
+          <CardTitle>Informações Gerais</CardTitle>
+          <CardDescription>
+            Atualize seu nome e confira seu nível de acesso na plataforma.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center space-x-4 mb-2">
+            <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center">
+              <User className="h-8 w-8 text-primary" />
+            </div>
+            <div>
+              <p className="font-medium text-lg">{profile?.email}</p>
+              <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold mt-1">
+                {profile?.role === 'Admin' ? 'Administrador' : profile?.role || 'Membro'}
               </div>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg flex items-center gap-2 border-b pb-2">
-              <User className="w-5 h-5" /> Habilidades
-            </h3>
-            {currentUser.skills && currentUser.skills.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {currentUser.skills.map((skill) => (
-                  <Badge key={skill} className="bg-primary/10 text-primary hover:bg-primary/20">
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">Nenhuma habilidade cadastrada ainda.</p>
-            )}
+
+          <div className="space-y-2">
+            <Label htmlFor="name">Nome Completo</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Digite seu nome"
+            />
           </div>
+
+          <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Salvar Alterações
+          </Button>
         </CardContent>
       </Card>
     </div>

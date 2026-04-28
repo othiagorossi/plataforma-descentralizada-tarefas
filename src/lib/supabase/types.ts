@@ -9,6 +9,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      activities: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          target: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          target: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          target?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'activities_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       macro_areas: {
         Row: {
           cost_center: string
@@ -79,6 +111,30 @@ export type Database = {
           name?: string
           role?: string
           skills?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      spaces: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
           updated_at?: string
         }
         Relationships: []
@@ -307,6 +363,12 @@ export const Constants = {
 // --- COLUMN TYPES (actual PostgreSQL types) ---
 // Use this to know the real database type when writing migrations.
 // "string" in TypeScript types above may be uuid, text, varchar, timestamptz, etc.
+// Table: activities
+//   id: uuid (not null, default: gen_random_uuid())
+//   user_id: uuid (nullable)
+//   action: text (not null)
+//   target: text (not null)
+//   created_at: timestamp with time zone (not null, default: now())
 // Table: macro_areas
 //   id: uuid (not null, default: gen_random_uuid())
 //   name: text (not null)
@@ -325,6 +387,12 @@ export const Constants = {
 //   assigned_areas: jsonb (not null, default: '[]'::jsonb)
 //   created_at: timestamp with time zone (not null, default: now())
 //   updated_at: timestamp with time zone (not null, default: now())
+// Table: spaces
+//   id: uuid (not null, default: gen_random_uuid())
+//   name: text (not null)
+//   icon: text (not null, default: 'https://img.usecurling.com/i?q=workspace'::text)
+//   created_at: timestamp with time zone (not null, default: now())
+//   updated_at: timestamp with time zone (not null, default: now())
 // Table: task_assignees
 //   task_id: uuid (not null)
 //   user_id: uuid (not null)
@@ -341,12 +409,17 @@ export const Constants = {
 //   updated_at: timestamp with time zone (not null, default: now())
 
 // --- CONSTRAINTS ---
+// Table: activities
+//   PRIMARY KEY activities_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY activities_user_id_fkey: FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE
 // Table: macro_areas
 //   FOREIGN KEY macro_areas_leader_id_fkey: FOREIGN KEY (leader_id) REFERENCES profiles(id) ON DELETE SET NULL
 //   PRIMARY KEY macro_areas_pkey: PRIMARY KEY (id)
 // Table: profiles
 //   FOREIGN KEY profiles_id_fkey: FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
 //   PRIMARY KEY profiles_pkey: PRIMARY KEY (id)
+// Table: spaces
+//   PRIMARY KEY spaces_pkey: PRIMARY KEY (id)
 // Table: task_assignees
 //   PRIMARY KEY task_assignees_pkey: PRIMARY KEY (task_id, user_id)
 //   FOREIGN KEY task_assignees_task_id_fkey: FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
@@ -356,22 +429,38 @@ export const Constants = {
 //   PRIMARY KEY tasks_pkey: PRIMARY KEY (id)
 
 // --- ROW LEVEL SECURITY POLICIES ---
+// Table: activities
+//   Policy "activities_insert" (INSERT, PERMISSIVE) roles={authenticated}
+//     WITH CHECK: (auth.uid() = user_id)
+//   Policy "activities_select" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
 // Table: macro_areas
 //   Policy "macro_areas_all" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: (EXISTS ( SELECT 1    FROM profiles   WHERE ((profiles.id = auth.uid()) AND ((profiles.role = 'Project Manager'::text) OR (profiles.role = 'Admin'::text)))))
 //   Policy "macro_areas_select" (SELECT, PERMISSIVE) roles={authenticated}
 //     USING: true
 // Table: profiles
+//   Policy "profiles_admin_update" (UPDATE, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM profiles profiles_1   WHERE ((profiles_1.id = auth.uid()) AND (profiles_1.role = 'Admin'::text))))
+//   Policy "profiles_delete" (DELETE, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM profiles profiles_1   WHERE ((profiles_1.id = auth.uid()) AND (profiles_1.role = 'Admin'::text))))
 //   Policy "profiles_select" (SELECT, PERMISSIVE) roles={authenticated}
 //     USING: true
 //   Policy "profiles_update" (UPDATE, PERMISSIVE) roles={authenticated}
 //     USING: (id = auth.uid())
+// Table: spaces
+//   Policy "spaces_all" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM profiles   WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'Admin'::text))))
+//   Policy "spaces_select" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
 // Table: task_assignees
 //   Policy "task_assignees_all" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: true
 //   Policy "task_assignees_select" (SELECT, PERMISSIVE) roles={authenticated}
 //     USING: true
 // Table: tasks
+//   Policy "tasks_delete" (DELETE, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM profiles   WHERE ((profiles.id = auth.uid()) AND (profiles.role = 'Admin'::text))))
 //   Policy "tasks_insert" (INSERT, PERMISSIVE) roles={authenticated}
 //     WITH CHECK: true
 //   Policy "tasks_select" (SELECT, PERMISSIVE) roles={authenticated}
