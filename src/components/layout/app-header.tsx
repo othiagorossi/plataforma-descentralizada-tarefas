@@ -12,19 +12,40 @@ import useMainStore from '@/stores/main'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/use-auth'
 import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase/client'
 
 export function AppHeader() {
-  const { activities, currentUser } = useMainStore()
-  const { signOut } = useAuth()
+  const { activities } = useMainStore()
+  const { user, signOut } = useAuth()
   const navigate = useNavigate()
-  const recentActivities = activities.slice(0, 3)
+  const recentActivities = activities?.slice(0, 3) || []
+
+  const [profile, setProfile] = useState<any>(null)
+
+  useEffect(() => {
+    if (user?.id) {
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => {
+          if (data) setProfile(data)
+        })
+    }
+  }, [user?.id])
 
   const handleLogout = async () => {
     await signOut()
     navigate('/login')
   }
 
-  if (!currentUser) return null
+  const name = profile?.name || user?.user_metadata?.name || 'Usuário'
+  const email = profile?.email || user?.email
+  const avatar = profile?.avatar || user?.user_metadata?.avatar_url
+
+  if (!user) return null
 
   return (
     <header className="h-16 border-b bg-background flex items-center justify-between px-4 lg:px-6 sticky top-0 z-10">
@@ -83,15 +104,15 @@ export function AppHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-9 w-9 rounded-full ml-2">
               <Avatar className="h-9 w-9">
-                <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
-                <AvatarFallback>{currentUser?.name?.charAt(0)}</AvatarFallback>
+                <AvatarImage src={avatar} alt={name} />
+                <AvatarFallback>{name?.charAt(0)}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <div className="p-2 border-b mb-2 flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{currentUser?.name}</p>
-              <p className="text-xs leading-none text-muted-foreground">{currentUser?.email}</p>
+              <p className="text-sm font-medium leading-none">{name}</p>
+              <p className="text-xs leading-none text-muted-foreground">{email}</p>
             </div>
             <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/perfil')}>
               <User className="mr-2 h-4 w-4" />

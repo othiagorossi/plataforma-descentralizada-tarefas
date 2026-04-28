@@ -4,16 +4,50 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Save, Image as ImageIcon } from 'lucide-react'
-import useMainStore from '@/stores/main'
+import { Save, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase/client'
 
 export default function SpacesPage() {
-  const { spaces } = useMainStore()
+  const [spaces, setSpaces] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase
+      .from('spaces')
+      .select('*')
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setSpaces(data)
+        }
+        setLoading(false)
+      })
+  }, [])
+
   const mainSpace = spaces[0]
 
   const handleSave = () => {
     toast.success('Configurações salvas com sucesso!')
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-40 items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (!mainSpace) {
+    return (
+      <div className="max-w-4xl space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Gerenciar Espaço</h1>
+          <p className="text-muted-foreground mt-4">Nenhum espaço encontrado no momento.</p>
+        </div>
+      </div>
+    )
   }
 
   return (

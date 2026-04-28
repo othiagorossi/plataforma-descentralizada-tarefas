@@ -14,10 +14,39 @@ import {
 import { LayoutDashboard, CheckSquare, Users, Settings, Hexagon, Coins } from 'lucide-react'
 import useMainStore from '@/stores/main'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useAuth } from '@/hooks/use-auth'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase/client'
 
 export function AppSidebar() {
-  const { currentUser, spaces, logout } = useMainStore()
+  const { spaces } = useMainStore()
   const location = useLocation()
+  const { user, signOut } = useAuth()
+  const [profile, setProfile] = useState<any>(null)
+  const [dbSpaces, setDbSpaces] = useState<any[]>([])
+
+  useEffect(() => {
+    if (user?.id) {
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => {
+          if (data) setProfile(data)
+        })
+    }
+
+    supabase
+      .from('spaces')
+      .select('*')
+      .then(({ data }) => {
+        if (data) setDbSpaces(data)
+      })
+  }, [user?.id])
+
+  const displaySpaces = dbSpaces.length > 0 ? dbSpaces : spaces || []
+  const role = profile?.role || 'Member'
 
   const navItems = [
     { title: 'Início', url: '/', icon: LayoutDashboard },
@@ -26,7 +55,7 @@ export function AppSidebar() {
     { title: 'Gerenciar Espaços', url: '/espacos', icon: Hexagon },
   ]
 
-  if (currentUser?.role === 'Project Manager' || currentUser?.role === 'Admin') {
+  if (role === 'Project Manager' || role === 'Admin') {
     navItems.push({ title: 'Gestão de Áreas', url: '/gestao', icon: Settings })
   }
 
@@ -61,14 +90,14 @@ export function AppSidebar() {
           <SidebarGroupLabel>Meus Espaços</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {spaces.map((space) => (
+              {displaySpaces.map((space: any) => (
                 <SidebarMenuItem key={space.id}>
                   <SidebarMenuButton asChild>
                     <Link to={`/espacos?id=${space.id}`}>
                       <img
-                        src={space.icon}
+                        src={space.icon || 'https://img.usecurling.com/i?q=workspace'}
                         alt={space.name}
-                        className="w-4 h-4 rounded-sm object-cover mr-2"
+                        className="w-4 h-4 rounded-sm object-cover mr-2 bg-muted"
                       />
                       <span>{space.name}</span>
                     </Link>
@@ -80,24 +109,28 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      {currentUser && (
+      {user && (
         <SidebarFooter className="border-t p-4 flex flex-col gap-4">
           <div className="flex items-center gap-3">
             <Avatar>
-              <AvatarImage src={currentUser.avatar} />
-              <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+              <AvatarImage src={profile?.avatar || user?.user_metadata?.avatar_url} />
+              <AvatarFallback>
+                {(profile?.name || user?.user_metadata?.name || 'U').charAt(0)}
+              </AvatarFallback>
             </Avatar>
             <div className="flex flex-col overflow-hidden flex-1">
-              <span className="text-sm font-medium truncate">{currentUser.name}</span>
-              <span className="text-xs text-muted-foreground truncate">{currentUser.role}</span>
+              <span className="text-sm font-medium truncate">
+                {profile?.name || user?.user_metadata?.name || 'Usuário'}
+              </span>
+              <span className="text-xs text-muted-foreground truncate">{role}</span>
               <div className="flex items-center text-xs text-accent font-semibold mt-0.5">
                 <Coins className="w-3 h-3 mr-1" />
-                {currentUser.credits} Créditos
+                {profile?.credits || 0} Créditos
               </div>
             </div>
           </div>
           <button
-            onClick={logout}
+            onClick={signOut}
             className="text-xs text-muted-foreground hover:text-foreground text-left w-full py-1 font-medium transition-colors"
           >
             Sair da conta
