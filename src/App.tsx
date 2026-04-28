@@ -10,6 +10,8 @@ import PeoplePage from './pages/people/PeoplePage'
 import SpacesPage from './pages/spaces/SpacesPage'
 import LoginPage from './pages/auth/LoginPage'
 import ManagementPage from './pages/admin/ManagementPage'
+import ProfilePage from './pages/profile/ProfilePage'
+import SettingsPage from './pages/settings/SettingsPage'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import { MainStoreProvider } from './stores/main'
 import { AuthProvider } from './hooks/use-auth'
@@ -35,6 +37,8 @@ const App = () => (
               <Route path="/pessoas" element={<PeoplePage />} />
               <Route path="/espacos" element={<SpacesPage />} />
               <Route path="/gestao" element={<ManagementPage />} />
+              <Route path="/perfil" element={<ProfilePage />} />
+              <Route path="/configuracoes" element={<SettingsPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

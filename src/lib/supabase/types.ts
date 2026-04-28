@@ -9,7 +9,157 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      macro_areas: {
+        Row: {
+          cost_center: string
+          created_at: string
+          id: string
+          leader_id: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          cost_center: string
+          created_at?: string
+          id?: string
+          leader_id?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          cost_center?: string
+          created_at?: string
+          id?: string
+          leader_id?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'macro_areas_leader_id_fkey'
+            columns: ['leader_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          assigned_areas: Json
+          avatar: string | null
+          created_at: string
+          credits: number
+          email: string
+          id: string
+          name: string
+          role: string
+          skills: Json
+          updated_at: string
+        }
+        Insert: {
+          assigned_areas?: Json
+          avatar?: string | null
+          created_at?: string
+          credits?: number
+          email: string
+          id: string
+          name: string
+          role?: string
+          skills?: Json
+          updated_at?: string
+        }
+        Update: {
+          assigned_areas?: Json
+          avatar?: string | null
+          created_at?: string
+          credits?: number
+          email?: string
+          id?: string
+          name?: string
+          role?: string
+          skills?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      task_assignees: {
+        Row: {
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'task_assignees_task_id_fkey'
+            columns: ['task_id']
+            isOneToOne: false
+            referencedRelation: 'tasks'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'task_assignees_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          created_at: string
+          credits: number
+          description: string | null
+          due_date: string | null
+          google_event_id: string | null
+          id: string
+          macro_area_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credits?: number
+          description?: string | null
+          due_date?: string | null
+          google_event_id?: string | null
+          id?: string
+          macro_area_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          description?: string | null
+          due_date?: string | null
+          google_event_id?: string | null
+          id?: string
+          macro_area_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'tasks_macro_area_id_fkey'
+            columns: ['macro_area_id']
+            isOneToOne: false
+            referencedRelation: 'macro_areas'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -154,7 +304,100 @@ export const Constants = {
 // Use the COLUMN TYPES section below to know the real PostgreSQL type for each column.
 // Always use the correct PostgreSQL type when writing SQL migrations.
 
+// --- COLUMN TYPES (actual PostgreSQL types) ---
+// Use this to know the real database type when writing migrations.
+// "string" in TypeScript types above may be uuid, text, varchar, timestamptz, etc.
+// Table: macro_areas
+//   id: uuid (not null, default: gen_random_uuid())
+//   name: text (not null)
+//   cost_center: text (not null)
+//   leader_id: uuid (nullable)
+//   created_at: timestamp with time zone (not null, default: now())
+//   updated_at: timestamp with time zone (not null, default: now())
+// Table: profiles
+//   id: uuid (not null)
+//   email: text (not null)
+//   name: text (not null)
+//   avatar: text (nullable)
+//   role: text (not null, default: 'Member'::text)
+//   credits: integer (not null, default: 0)
+//   skills: jsonb (not null, default: '[]'::jsonb)
+//   assigned_areas: jsonb (not null, default: '[]'::jsonb)
+//   created_at: timestamp with time zone (not null, default: now())
+//   updated_at: timestamp with time zone (not null, default: now())
+// Table: task_assignees
+//   task_id: uuid (not null)
+//   user_id: uuid (not null)
+// Table: tasks
+//   id: uuid (not null, default: gen_random_uuid())
+//   title: text (not null)
+//   description: text (nullable)
+//   status: text (not null, default: 'todo'::text)
+//   credits: integer (not null, default: 0)
+//   due_date: timestamp with time zone (nullable)
+//   macro_area_id: uuid (nullable)
+//   google_event_id: text (nullable)
+//   created_at: timestamp with time zone (not null, default: now())
+//   updated_at: timestamp with time zone (not null, default: now())
+
+// --- CONSTRAINTS ---
+// Table: macro_areas
+//   FOREIGN KEY macro_areas_leader_id_fkey: FOREIGN KEY (leader_id) REFERENCES profiles(id) ON DELETE SET NULL
+//   PRIMARY KEY macro_areas_pkey: PRIMARY KEY (id)
+// Table: profiles
+//   FOREIGN KEY profiles_id_fkey: FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
+//   PRIMARY KEY profiles_pkey: PRIMARY KEY (id)
+// Table: task_assignees
+//   PRIMARY KEY task_assignees_pkey: PRIMARY KEY (task_id, user_id)
+//   FOREIGN KEY task_assignees_task_id_fkey: FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+//   FOREIGN KEY task_assignees_user_id_fkey: FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE
+// Table: tasks
+//   FOREIGN KEY tasks_macro_area_id_fkey: FOREIGN KEY (macro_area_id) REFERENCES macro_areas(id) ON DELETE SET NULL
+//   PRIMARY KEY tasks_pkey: PRIMARY KEY (id)
+
+// --- ROW LEVEL SECURITY POLICIES ---
+// Table: macro_areas
+//   Policy "macro_areas_all" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM profiles   WHERE ((profiles.id = auth.uid()) AND ((profiles.role = 'Project Manager'::text) OR (profiles.role = 'Admin'::text)))))
+//   Policy "macro_areas_select" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
+// Table: profiles
+//   Policy "profiles_select" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
+//   Policy "profiles_update" (UPDATE, PERMISSIVE) roles={authenticated}
+//     USING: (id = auth.uid())
+// Table: task_assignees
+//   Policy "task_assignees_all" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+//   Policy "task_assignees_select" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
+// Table: tasks
+//   Policy "tasks_insert" (INSERT, PERMISSIVE) roles={authenticated}
+//     WITH CHECK: true
+//   Policy "tasks_select" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
+//   Policy "tasks_update" (UPDATE, PERMISSIVE) roles={authenticated}
+//     USING: true
+
 // --- DATABASE FUNCTIONS ---
+// FUNCTION handle_new_user()
+//   CREATE OR REPLACE FUNCTION public.handle_new_user()
+//    RETURNS trigger
+//    LANGUAGE plpgsql
+//    SECURITY DEFINER
+//   AS $function$
+//   BEGIN
+//     INSERT INTO public.profiles (id, email, name, avatar)
+//     VALUES (
+//       NEW.id,
+//       NEW.email,
+//       COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+//       NEW.raw_user_meta_data->>'avatar_url'
+//     );
+//     RETURN NEW;
+//   END;
+//   $function$
+//
 // FUNCTION rls_auto_enable()
 //   CREATE OR REPLACE FUNCTION public.rls_auto_enable()
 //    RETURNS event_trigger

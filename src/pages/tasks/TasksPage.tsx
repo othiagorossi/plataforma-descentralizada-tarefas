@@ -4,15 +4,49 @@ import { TaskKanban } from '@/components/tasks/task-kanban'
 import { TaskDialog } from '@/components/tasks/task-dialog'
 import { Button } from '@/components/ui/button'
 import { Kanban, List, Plus } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import useMainStore from '@/stores/main'
 
 export default function TasksPage() {
   const [view, setView] = useState<'kanban' | 'list'>('kanban')
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+
+  const { addTask, currentUser } = useMainStore()
+
+  // New task state
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [credits, setCredits] = useState(10)
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task)
     setIsDialogOpen(true)
+  }
+
+  const handleCreateTask = async () => {
+    if (!title) return
+    await addTask({
+      title,
+      description,
+      credits,
+      status: 'todo',
+    })
+    setIsCreateOpen(false)
+    setTitle('')
+    setDescription('')
+    setCredits(10)
   }
 
   return (
@@ -42,9 +76,56 @@ export default function TasksPage() {
               <List className="w-4 h-4 mr-2" /> Lista
             </Button>
           </div>
-          <Button size="sm" className="h-9">
-            <Plus className="w-4 h-4 mr-1" /> Nova Tarefa
-          </Button>
+
+          {(currentUser?.role === 'Admin' || currentUser?.role === 'Project Manager') && (
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="h-9">
+                  <Plus className="w-4 h-4 mr-1" /> Nova Tarefa
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Criar Nova Tarefa</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Título</Label>
+                    <Input
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Ex: Desenvolver nova funcionalidade"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Descrição</Label>
+                    <Textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Detalhes da tarefa..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Créditos de Recompensa</Label>
+                    <Input
+                      type="number"
+                      value={credits}
+                      onChange={(e) => setCredits(Number(e.target.value))}
+                      min={0}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleCreateTask} disabled={!title}>
+                    Criar Tarefa
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
 
@@ -58,7 +139,9 @@ export default function TasksPage() {
         )}
       </div>
 
-      <TaskDialog task={selectedTask} open={isDialogOpen} onOpenChange={setIsDialogOpen} />
+      {isDialogOpen && (
+        <TaskDialog task={selectedTask} open={isDialogOpen} onOpenChange={setIsDialogOpen} />
+      )}
     </div>
   )
 }

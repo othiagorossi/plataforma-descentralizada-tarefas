@@ -93,11 +93,11 @@ export function AppHeader() {
               <p className="text-sm font-medium leading-none">{currentUser?.name}</p>
               <p className="text-xs leading-none text-muted-foreground">{currentUser?.email}</p>
             </div>
-            <DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/perfil')}>
               <User className="mr-2 h-4 w-4" />
               <span>Perfil</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/configuracoes')}>
               <Settings className="mr-2 h-4 w-4" />
               <span>Configurações</span>
             </DropdownMenuItem>
